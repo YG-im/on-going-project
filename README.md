@@ -1,4 +1,4 @@
-# on-going-project : Academic Writing Assistance Program for non-native speakers
+# on-going-project 1 : Academic Writing Assistance Program for non-native speakers
 
 ## Motivation
 - 학술 작문은 일반 작문과는 다르게 용어와 해당 필드의 언어 습관을 적절하게 활용하는 것이 굉장히 중요하다. 
@@ -49,3 +49,5 @@
  - 오픈 소스로 있는 pdf to txt프로그램들의 성능을 파악하고 문자 복원률을 확인한다.
  - 복원률이 낮으면 개선방안을 고안한다.
  
+# on-going-project 2 : House price valuation (Kaggle prediction competitions)
+- 집값을 예측하는 Kaggle 대회 참가하여 진행 중인 프로젝트입니다.
