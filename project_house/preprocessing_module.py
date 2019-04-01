@@ -18,8 +18,20 @@ from scipy.stats import norm, skew
 
 #root_meam_squared_error
 def rmse(predictions, targets):
+    '''
+    root mean squared error을 계산해주는 함수.
+    predictions : 예측치를 data frame으로 입력
+    targets : 정답을 data frame으로 입력
+    '''
     return np.sqrt(((predictions - targets) ** 2).mean())
 
+def functions_list():
+    # preprocessing_module 의 함수 list 출력
+    from inspect import getmembers, isfunction
+    #import preprocessing_module
+    
+    return [o[0] for o in getmembers(numpy) if isfunction(o[1])]
+    
 
 # In[2]:
 
@@ -50,33 +62,49 @@ def categ_or_contin(df, criterion=10, cat_or_cont=True, print_col = True):
 # In[4]:
 
 
-def test_for_transf(df, col_str, transf_ls):
+def test_for_transf(df, col_str,transf_ls):
     '''
     Continous variable의 적절한 전처리를 위하여 '입력된 수식들로 변환된 column' vs 'frequency'의 그래프를 출력하는 함수.
-    (사용시 추천예시) : 이렇게 같은 cell에 variable들을 정의하고, 함수안에선 수식만 바꾸면 더 편하다.
-    df = house7[0]; col_str = 'bathrooms'; x = df[col_str];
-    test_for_transf(df, col_str ,[x, np.log(x), (x-x.min())**(2/3)] )
-
+    어떤 변환이 유용한지 한번에 여러 그래프 출력해서 비교해보고 싶을 때 유용.
     df : 해당 데이터프레임 입력
     col_str : df에서 확인해보고 싶은 column 하나를 string으로 입력 ex) 'price'
-    transf_ls : 'del x'를 선행한 후 테스트 해보고 싶은 transfromation 수식을 target에대한 함수로 만들어서 list형태로 입력 
-        ex) [(x-x.min())^2, np.log(x)]
+    transf_ls : 변환시켜 그려보고 싶은 변환 공식을 입력한다. 
+        - 입력되어있는 수식은 다음과 같은 str형태로 입력 : 'x', 'log(x)', 'log(1+x)' 
+          cf)  자주사용하는 함수 내에 equations dictionary에  입력해놓서 customize하면 편리.
+        - 원하는 나만의 수식이 있을 시 lambda 함수 혹은 def function을 입력.
+        - 입력 예시 : transf_ls = ['x', 'np.log(x)', lambda x : (x - house6[0]['price'].min())**(3/2)]
     '''
+    # 자주사용하는 eqauation들 아래 dictionary에 입력해놓으면 편리함.
+    equations = {'x' : lambda x: x, 'log(x)' : lambda x: np.log(x), 'log(1+x)' : lambda x: np.log(1+x)}
+
     target_col = col_str
     target = df[target_col]
     target_transf = transf_ls # test해보고 싶은 transf 수식들 다 list 안에 넣기
-    for i in range(len(target_transf)):
+    
+    df_transf = []
+    for eq in target_transf:
+        if type(eq) is type(lambda x : x): # eq의 type이 함수면 그대로 eq사용.
+            eq = eq   
+        elif type(eq) is str:    # eq의 type이 string이면 
+            if eq in equations.keys(): # equations에서 불러올 수 잇는 함수가 있는지 체크
+                eq = equations[eq]     # 불러올게 있다면 불러온다.
+            else:                      # 없다면 경고문 출력
+                print("{} 또는 lambda 함수를 입력해주세요 ex) 'lambda x: function'".format(list(equations.keys())))
+        else: # 해당사항들 없으면 경고문 출력
+            print("{} 또는 lambda 함수를 입력해주세요 ex) 'lambda x: function'".format(list(equations.keys())))
+        df_transf.append(df[col_str].apply(eq)) # 어쨋든 함수 eq를 df[col_str]에 적용하고 list로 만듦. 이걸로 그래프그릴것임.
+    
+    for i in range(len(df_transf)):
         # let's plot a histogram with the fitted parameters used by the function
-        sns.distplot(target_transf[i] , fit=norm);
+        sns.distplot(df_transf[i] , fit=norm); #df_transf에서 하나씩 꺼내서 그래프 그리기
         # get mean and standard deviation
-        (mu, sigma) = norm.fit(target_transf[i])
+        (mu, sigma) = norm.fit(df_transf[i]) ##
         # add legends to the plot
         plt.legend(['Normal dist. ($\mu=$ {:.2f} and $\sigma=$ {:.2f} )'.format(mu, sigma)],
                     loc='best')
         plt.ylabel('Frequency')
 #        plt.title(target_col)
         plt.show()
-
 
 # In[5]:
 
@@ -109,45 +137,54 @@ def check_skew(df, column_list_=None, skewness=1.5, criterion_of_cont_var=15, pr
 # In[6]:
 
 
-def Remove_outliers(IQR_target_df, criterion_of_cont_var=15, criterion_Q1=0.25, criterion_Q3=0.75):
+def Remove_outliers(IQR_target_df,  col_target=None, dropna_inplace=False, criterion_of_cont_var=15, criterion_Q1=0.25, criterion_Q3=0.75):
     '''
-    IQR rule에 따라 연속형 변수의 이상치를 제거해주는 함수.
+    IQR rule에 따라 입력된 columns 또는 연속형 변수의 이상치를 제거해주는 함수.
     IQR rule : Q3-1.5*IQR보다 크거나 Q1-1.5*IQR보다 작으면 이상치라고 판단. 삭제
     IQR_target_df : 타겟이 될 데이터 프레임
+    dropna_inplace : (True : NAN이 있는 행과 열 제거 한다) or (False : 제거 안하고 대상 행렬별 NAN 갯수 출력)
+    col_target (default=None): 원하는 columns list 입력, 입력 안하면 전체 연속변수가 대상 
     criterion_of_cont_var (default=15) : 연속형 변수의 기준.
     ex) Remove_outliers(house4_1[0], 20)
     '''
-    IQR_target = IQR_target_df #house4_1[0]
-    continuous_IQR = categ_or_contin(IQR_target,criterion_of_cont_var,print_col=False)
-
+    IQR_target = IQR_target_df 
+    if col_target == None:
+        col_target = categ_or_contin(IQR_target,criterion_of_cont_var,print_col=False)
+        
     len_before = len(IQR_target)
-    Q1 = IQR_target[continuous_IQR].quantile(criterion_Q1)
-    Q3 = IQR_target[continuous_IQR].quantile(criterion_Q3)
+    Q1 = IQR_target[col_target].quantile(criterion_Q1)
+    Q3 = IQR_target[col_target].quantile(criterion_Q3)
     IQR = Q3 - Q1
-    condition1 = Q1 - 1.5*IQR < IQR_target[continuous_IQR]
-    condition2 = Q3 + 1.5*IQR > IQR_target[continuous_IQR]
-    IQR_target[continuous_IQR] = IQR_target[continuous_IQR][condition1 & condition2]
+    condition1 = Q1 - 1.5*IQR < IQR_target[col_target]
+    condition2 = Q3 + 1.5*IQR > IQR_target[col_target]
     # IQR rule : Q3-1.5*IQR보다 크거나 Q1-1.5*IQR보다 작으면 이상치라고 판단. 삭제
-    IQR_target.dropna(inplace=True)
-    IQR_target.reset_index(drop=True, inplace=True)
-    len_after = len(IQR_target)
-    print('Outliers are completely removed. Length is redeced from {} to {}'.format(len_before, len_after))
 
-
+    if dropna_inplace == True:
+        IQR_target[col_target] = IQR_target[col_target][condition1 & condition2]
+        IQR_target.dropna(inplace= dropna_inplace)
+        IQR_target.reset_index(drop=True, inplace=True)
+        len_after = len(IQR_target)
+        print('Outliers are completely removed. Length is redeced from {} to {}'.format(len_before, len_after))
+    else:
+        return pd.DataFrame(IQR_target[col_target][condition1 & condition2].isnull().sum().rename('# of NAN'))
 # In[7]:
 
 
-def count_category(target, criterion_of_cont_var=15, sort_category = False):
+def count_category(target, col_target=None, criterion_of_cont_var=15, sort_category = False):
     '''
     target의 columns 중 categorical variable의 category 종류 및 각 category에 대한 샘플의 수를 count해주는 함수.
     target : 원하는 dataframe을 입력.
+    col_target (default=None) : 특정 column에 대해 확인해보고 싶을시 list 형태로 입력
     criterion_of_cont_var (default=10) : categorical variable의 기준을 입력.
         ex) criterion_of_cont_var=10 : variable이 10 종 이하로 전부 분류되면 categorical variable.
     sort_category (default = False) : False면 sample수가 많은 카테고리 순으로 배열, True면 카테고리를 오름차순으로 배열
     '''
     count_target = target
     result = []
-    categ_var = categ_or_contin(count_target,criterion_of_cont_var,False,False)
+    if col_target == None: # 원하는 col을 따로 입력 안할 시 모든 categorical var에대해 체크
+        categ_var = categ_or_contin(count_target,criterion_of_cont_var,False,False)
+    else : 
+        categ_var = col_target
     
     for i in range(len(categ_var)):
         pd_count = count_target[categ_var[i]].value_counts()
@@ -292,7 +329,41 @@ def corr_heatmap(df_corr, sort_by_col, column_list_=None, figsize_tuple=(12, 10)
     plt.show()
 
 
-
+def x_vs_y_with_fixed_col(df_target, x_col, y_col, fixed_col, ylim_b=None, ylim_t=None, figsize_tuple=(12,10), loc_='best'):
+    '''
+    범주형 변수(fixed_col)의 범주별로 x_col vs y_col 그래프 출력 함수
+    df_target : data frame 입력
+    x_col : df_target의 columns 중 x축에 들어갈 변수명 입력.
+    y_col : df_target의 columns 중 y축에 들어갈 변수명 입력.(ex) label 입력
+    fixed_col : df_target의 columns 중 범주별로 그려보고 싶은 변수명 입력
+    ylim_b (default=None) : 그래프 y축 범위 설정 cf) plt.ylim=(ylim_b, ylim_t)
+    ylim_t (default=None) : 그래프 y축 범위 설정
+    figsize_tuple (default==(12,10)) : 그래프 전체 사이즈 튜플로 입력
+    loc_ (default='best') : Legend 위치 입력
+        ex) loc_ = 'best', 'upper right', 'upper left', 'lower left', 'lower right', 'right', 
+                'center left', 'center right', 'lower center', 'upper center', 'center' 
+    '''    
+    target = df_target 
+    
+    category_ls = list(count_category(target,[fixed_col],sort_category=True)['category']) #특정 범주형 변수의 범주 종류 list화
+    j=0
+    fig = plt.figure(figsize=figsize_tuple)
+    row_len, col_len = rowXcol_for_subfig(len(category_ls))
+    for i in category_ls:
+        j+=1
+        h_test = target[(target[fixed_col]==i)]
+        if ylim_b==None:
+            ylim_b_ = h_test[y_col].min()
+        else:
+            ylim_b_ = ylim_b
+        if ylim_t==None:
+            ylim_t_ = h_test[y_col].max()
+        else:
+            ylim_t_ = ylim_t
+        axi = fig.add_subplot(row_len,col_len,j)
+        sns.regplot(x=x_col, y=y_col, data=h_test, ax=axi)
+        plt.ylim(ylim_b_,ylim_t_)
+        plt.legend(['{} : {}'.format(fixed_col, i)], loc=loc_)
 
 
 
