@@ -36,13 +36,13 @@ def functions_list():
 # In[2]:
 
 
-def categ_or_contin(df, criterion=10, cat_or_cont=True, print_col = True):
+def categ_or_contin(df, criterion=15, cat_or_cont=True, print_col = True):
     '''
     df의 column을 이루고 있는 value들 종류 갯수를 파악하여 연속형 변수와 범주형 변수로 구분해주는 함수.
     cat_or_cont = True (default) : 연속형 변수 출력
     cat_or_cont = False : 범주형 변수 출력
-    criterion(default = 10) : 연속과 범주형의 기준 제시.
-    ex) criterion = 10 : value의 종류가 10종이하이면 범주형 변수, 넘으면 연속형 변수
+    criterion(default = 15) : 연속과 범주형의 기준 제시.
+    ex) criterion = 15 : value의 종류가 15종이하이면 범주형 변수, 넘으면 연속형 변수
     ex) categ_or_contin(house6[0],15,False)
     '''   
     target_skew = df
@@ -207,76 +207,9 @@ def rowXcol_for_subfig(length):
     col_len = int(round(length/row_len,0))+1 if row_len*round(length/row_len,0) < length else int(round(length/row_len,0))
     return row_len, col_len
 
-
-def features_vs_frequency(df_target_, figsize_tuple_ = (12,10), loc_='best'):
-    '''
-    df_target_의 features_들의 분포를 행렬 그래프로 그리는 함수
-    df_target_ : 그래프들 그려볼 data frame
-    figsize_tuple_ : 전체 그래프 사이즈를 튜플로 입력
-    loc_ : lengend 위치 설정
-      ex) loc_ = 'best', 'upper right', 'upper left', 'lower left', 'lower right', 'right', 
-                'center left', 'center right', 'lower center', 'upper center', 'center' 
-    '''    
-    df_target = df_target_
-    figsize_tuple = figsize_tuple_
-    
-    col = df_target.columns # df_target의 feature list
-    
-    # data frame의 feature의 갯수에 따라 적절한 행과 열을 결정해준다. 
-    row_len, col_len = rowXcol_for_subfig(len(col))
-    print('그래프가 {}X{}행렬로 그려집니다.'.format(row_len, col_len))
-    
-    # let's plot a histogram with the fitted parameters used by the function
-    fig = plt.figure(figsize=figsize_tuple)
-    for i in range(len(col)):
-        target = df_target[col[i]]
-        axi = fig.add_subplot(row_len,col_len,i+1)
-        sns.distplot(target , fit=norm, ax=axi)
-        plt.ylabel('Frequency')
-        plt.legend([col[i]], loc=loc_)
-
-
-# In[9]:
-
-
-def features_vs_label(df_target_, label_str , col_target=None, figsize_tuple_ = (12,10), loc_='best'):
-    '''
-    df_target_의 col_target vs label를 행렬 그래프로 그리는 함수
-    df_target_ : 그래프들 그려볼 data frame
-    label_str : df_target_의 label을 str 형태로 입력.
-    col_target : label에 대한 분포를 파악하기를 원하는 features를 list형태로 입력.
-    figsize_tuple_ : 전체 그래프 사이즈를 튜플로 입력
-    loc_ : lengend 위치 설정
-      ex) loc_ = 'best', 'upper right', 'upper left', 'lower left', 'lower right', 'right', 
-                'center left', 'center right', 'lower center', 'upper center', 'center' 
-    '''
-    if col_target == None: #구분할 행을 입력하지 않으면 df의 전체 행을 입력해준다.
-        col = list(df_target_.columns)
-    else :
-        col = col_target    
-    
-    df_target = df_target_
-    figsize_tuple = figsize_tuple_
-    
-    
-    # data frame의 feature의 갯수에 따라 적절한 행과 열을 결정해준다.
-    row_len, col_len = rowXcol_for_subfig(len(col))
-    print('그래프가 {}X{}행렬로 그려집니다.'.format(row_len, col_len))
-
-    # columns vs label
-    fig = plt.figure(figsize=figsize_tuple)
-    for i in range(len(col)):
-        axi = fig.add_subplot(row_len,col_len,i+1)
-        sns.regplot(x=col[i], y=label_str, data=df_target, ax=axi)
-        plt.legend([col[i]], loc=loc_)
-
-
-# In[10]:
-
-
 def one_feature_vs_freqency(df_target, col_name, loc_='best'):
     '''
-    f_target의 feature인 col_name의 분포(frequency)를 행렬 그래프로 그리는 함수
+    f_target의 feature인 col_name의 분포(frequency)를 행렬 그래프로 그리는 함수(왜도, 평균, 표준편차 표시)
     df_target : 그래프를 그려볼 data frame
     col_name : 그래프를 그려볼 featreu 이름 type = str
     loc_ : lengend 위치 설정
@@ -298,6 +231,116 @@ def one_feature_vs_freqency(df_target, col_name, loc_='best'):
                 loc=loc_)
     plt.ylabel('Frequency')
     plt.title(col_target);
+
+
+def features_vs_frequency(df_target_, col_target=None, criterion_of_cont_var=15, figsize_tuple_=(12,10), loc_='best'):
+    '''
+    df_target_의 features_들의 분포를 행렬 그래프로 그리는 함수
+    col_target (default=None / True : 연속형만 선택) : 빈도 분포를 파악하기를 원하는 features를 list형태로 입력.
+    df_target_ : 그래프들 그려볼 data frame
+    criterion_of_cont_var (default=15) : continuous variable의 기준! ex) 15 = value가 15종 이상으로 나눠지면 연속형변수.
+        cf) col_target =True 일때는 중요. 아니면 불필요.
+    figsize_tuple_ : 전체 그래프 사이즈를 튜플로 입력
+    loc_ : lengend 위치 설정
+      ex) loc_ = 'best', 'upper right', 'upper left', 'lower left', 'lower right', 'right', 
+                'center left', 'center right', 'lower center', 'upper center', 'center' 
+    '''    
+    df_target = df_target_
+    figsize_tuple = figsize_tuple_
+    
+    if col_target == None: #구분할 행을 입력하지 않으면 df의 전체 행을 입력해준다.
+        col = list(df_target.columns)
+    elif col_target == True:
+        col = categ_or_contin(df_target,criterion_of_cont_var,True,False)
+    else :
+        col = col_target
+        
+    # data frame의 feature의 갯수에 따라 적절한 행과 열을 결정해준다. 
+    row_len, col_len = rowXcol_for_subfig(len(col))
+    print('그래프가 {}X{}행렬로 그려집니다.'.format(row_len, col_len))
+    
+    # let's plot a histogram with the fitted parameters used by the function
+    fig = plt.figure(figsize=figsize_tuple)
+    for i in range(len(col)):
+        target = df_target[col[i]]
+        axi = fig.add_subplot(row_len,col_len,i+1)
+        sns.distplot(target , fit=norm, ax=axi)
+        plt.ylabel('Frequency')
+        plt.legend([col[i]], loc=loc_)
+
+
+# In[9]:
+
+
+def features_vs_label(df_target_, label_str , col_target=None,criterion_of_cont_var=15, figsize_tuple_ = (12,10), loc_='best'):
+    '''
+    df_target_의 col_target vs label를 행렬 그래프로 그리는 함수
+    col_target (default=None / True : 연속형만 선택) : label에 대한 분포를 파악하기를 원하는 features를 list형태로 입력.
+    df_target_ : 그래프들 그려볼 data frame
+    label_str : df_target_의 label을 str 형태로 입력.
+    criterion_of_cont_var (default=15) : continuous variable의 기준! ex) 15 = value가 15종 이상으로 나눠지면 연속형변수.
+        cf) col_target =True 일때는 중요. 아니면 불필요.
+    figsize_tuple_ : 전체 그래프 사이즈를 튜플로 입력
+    loc_ : lengend 위치 설정
+      ex) loc_ = 'best', 'upper right', 'upper left', 'lower left', 'lower right', 'right', 
+                'center left', 'center right', 'lower center', 'upper center', 'center' 
+    '''
+    df_target = df_target_
+    figsize_tuple = figsize_tuple_
+    
+    if col_target == None: #구분할 행을 입력하지 않으면 df의 전체 행을 입력해준다.
+        col = list(df_target.columns)
+    elif col_target == True:
+        col = categ_or_contin(df_target,criterion_of_cont_var,True,False)
+    else :
+        col = col_target
+    
+    # data frame의 feature의 갯수에 따라 적절한 행과 열을 결정해준다.
+    row_len, col_len = rowXcol_for_subfig(len(col))
+    print('그래프가 {}X{}행렬로 그려집니다.'.format(row_len, col_len))
+
+    # columns vs label
+    fig = plt.figure(figsize=figsize_tuple)
+    for i in range(len(col)):
+        axi = fig.add_subplot(row_len,col_len,i+1)
+        sns.regplot(x=col[i], y=label_str, data=df_target, ax=axi)
+        plt.legend([col[i]], loc=loc_)
+
+
+# In[10]:
+
+
+def features_Boxplot(df_target_, y_label ,col_target_cat = None, criterion_of_cat_var=15, figsize_tuple_ = (12,10)):
+    '''
+    df_target_의 categorical variabel의 분포를 Boxploe의 행렬로 그려주는 함수
+    df_target_ : 그래프들 그려볼 data frame
+    y_label : df_target_의 label을 입력. Box plot의 y축을 담당할 것임
+    col_target_cat (default=None): 원하는 columns list 입력, 입력 안하면 전체 categorical 변수가 대상
+    criterion_of_cat_var (default=15) : categorical variable의 기준! ex) 15 = value가 15종 밑으로 나눠지면 categorical임.
+        cf) col_target_cat =None 일때는 중요. 아니면 불필요.
+    figsize_tuple_ : 전체 그래프 사이즈를 튜플로 입력
+    '''    
+    df_target = df_target_
+    figsize_tuple = figsize_tuple_
+    
+    if col_target_cat == None: #구분할 행을 입력하지 않으면 df의 전체 행을 입력해준다.
+        col = categ_or_contin(df_target,criterion_of_cat_var,False,False)
+    else :
+        col = col_target_cat  
+    
+    # data frame의 feature의 갯수에 따라 적절한 행과 열을 결정해준다. 
+    row_len, col_len = rowXcol_for_subfig(len(col))
+    print('그래프가 {}X{}행렬로 그려집니다.'.format(row_len, col_len))
+    
+    # let's plot a histogram with the fitted parameters used by the function
+    fig = plt.figure(figsize=figsize_tuple)
+    
+    for i in range(len(col)):
+        axi = fig.add_subplot(row_len,col_len,i+1)
+        sns.boxplot(x=col[i], y=y_label, data=df_target, ax=axi)        
+
+
+
 
 
 # In[11]:
@@ -364,7 +407,5 @@ def x_vs_y_with_fixed_col(df_target, x_col, y_col, fixed_col, ylim_b=None, ylim_
         sns.regplot(x=x_col, y=y_col, data=h_test, ax=axi)
         plt.ylim(ylim_b_,ylim_t_)
         plt.legend(['{} : {}'.format(fixed_col, i)], loc=loc_)
-
-
 
 
