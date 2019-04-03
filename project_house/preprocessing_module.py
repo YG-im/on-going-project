@@ -291,7 +291,7 @@ def features_vs_label(df_target_, label_str , col_target=None,criterion_of_cont_
     if col_target == None: #구분할 행을 입력하지 않으면 df의 전체 행을 입력해준다.
         col = list(df_target.columns)
     elif col_target == True:
-        col = categ_or_contin(df_target,criterion_of_cont_var,True,False)
+    col = categ_or_contin(df_target,criterion_of_cont_var,True,print_col = False)
     else :
         col = col_target
     
@@ -408,4 +408,40 @@ def x_vs_y_with_fixed_col(df_target, x_col, y_col, fixed_col, ylim_b=None, ylim_
         plt.ylim(ylim_b_,ylim_t_)
         plt.legend(['{} : {}'.format(fixed_col, i)], loc=loc_)
 
+        
+def corr_btw_x_y_VS_fixed_col(df_target, x_col, y_col, fixed_col, figsize_tuple=(7,6), palette_color='purple', fmt_=".2f"):
+    '''
+    범주형 변수(fixed_col)의 범주별로 x_col vs y_col 그래프 출력 함수
+    df_target : data frame 입력
+    x_col : df_target의 columns 중 x축에 들어갈 변수명 입력.
+    y_col : df_target의 columns 중 y축에 들어갈 변수명 입력.(ex) label 입력
+    fixed_col : df_target의 columns 중 범주별로 그려보고 싶은 변수명 입력
+    ylim_b (default=None) : 그래프 y축 범위 설정 cf) plt.ylim=(ylim_b, ylim_t)
+    ylim_t (default=None) : 그래프 y축 범위 설정
+    figsize_tuple (default==(12,10)) : 그래프 전체 사이즈 튜플로 입력
+    loc_ (default='best') : Legend 위치 입력
+        ex) loc_ = 'best', 'upper right', 'upper left', 'lower left', 'lower right', 'right', 
+                'center left', 'center right', 'lower center', 'upper center', 'center' 
+    '''    
+    target = df_target 
+    
+    category_ls = list(count_category(target,[fixed_col],sort_category=True)['category']) #특정 범주형 변수의 범주 종류 list화
+    j=0
+    fig = plt.figure(figsize=figsize_tuple)
+    row_len, col_len = rowXcol_for_subfig(len(category_ls))
+    
+    data = []
+    
+    for i in category_ls:
+        h_corr = target[target[fixed_col]==i][[x_col, y_col]].corr(method='pearson')
+        x_y_corr = h_corr.loc[x_col, y_col]
+        print('The correlation between {} and {} in {}({}) is {}.'.format(x_col, y_col, fixed_col, i, round(x_y_corr,2)))
+        data.append(x_y_corr)
+    
+    plt.plot(data)
+    plt.xlabel(fixed_col)
+    plt.ylabel('correlation coefficient')
+    plt.title('Correlation Coefficient btw {} and {}'.format(x_col, y_col))
+    plt.show()     
+        
 
