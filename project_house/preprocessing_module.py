@@ -291,7 +291,7 @@ def features_vs_label(df_target_, label_str , col_target=None,criterion_of_cont_
     if col_target == None: #구분할 행을 입력하지 않으면 df의 전체 행을 입력해준다.
         col = list(df_target.columns)
     elif col_target == True:
-    col = categ_or_contin(df_target,criterion_of_cont_var,True,print_col = False)
+        col = categ_or_contin(df_target,criterion_of_cont_var,True,print_col = False)
     else :
         col = col_target
     
