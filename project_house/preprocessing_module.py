@@ -165,6 +165,7 @@ def Remove_outliers(IQR_target_df,  col_target=None, dropna_inplace=False, crite
         IQR_target.reset_index(drop=True, inplace=True)
         len_after = len(IQR_target)
         print('Outliers are completely removed. Length is redeced from {} to {}'.format(len_before, len_after))
+        return IQR_target
     else:
         return pd.DataFrame(IQR_target[col_target][condition1 & condition2].isnull().sum().rename('# of NAN'))
 # In[7]:
