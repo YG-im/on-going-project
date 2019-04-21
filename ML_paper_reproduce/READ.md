@@ -6,4 +6,5 @@
     - 최근 가장 핫하게 떠오른 GAN 알고리즘 중 하나인 starGAN을 tensorflow2.0을 사용하여 구현.
       - title : StarGAN: Unified Generative Adversarial Networks for Multi-Domain Image-to-Image Translation (arXiv:1711.09020)
       - authors : Yunjey Choi, Minje Choi, Munyoung Kim, Jung-Woo Ha, Sunghun Kim, Jaegul Choo  
+    - 'starGAN'폴더에는 GAN의 기본 알고리즘인 DCGAN을 공부한 코드도 들어있습니다. (DCGAN 공부에는 오픈소스 사용.)  
 2. 구현 예정 : Wavenet      
