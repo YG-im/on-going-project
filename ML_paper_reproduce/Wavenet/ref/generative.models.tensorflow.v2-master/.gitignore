@@ -1,0 +1,21 @@
+# .DS_Store for mac
+.DS_Store
+
+# datasets
+datasets
+
+# train and checkpoint folder
+*/train/*
+
+# ipynb_checkpoints
+*/.ipynb_checkpoints
+
+
+# __pycache__
+*/__pycache__
+
+# result files
+assets
+*/*.jpg
+*/*.png
+*/*.gif
